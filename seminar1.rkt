@@ -107,11 +107,18 @@
 ;Problem 10
 (define (sq x) (* x x))
 
+;(define (^ x n)
+;  (cond
+;    ((zero? n) 1)
+;    ((odd? n) (* x (sq (^ x (quotient n 2)))))
+;    (else (sq (^ x (quotient n 2))))))
+
 (define (^ x n)
-  (cond
-    ((zero? n) 1)
-    ((odd? n) (* x (sq (^ x (quotient n 2)))))
-    (else (sq (^ x (quotient n 2))))))
+  (define (loop n res remain)
+    (if (> n 1)
+        (loop (quotient n 2) (sq res) (if (even? n) remain (* remain res)))
+        (* res remain)))
+  (loop n x 1))
 
 (^ 2 3)
 (^ 0 6)
