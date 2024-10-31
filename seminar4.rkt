@@ -68,7 +68,7 @@
   (define fx (f x))
   (cond
     ((null? lst) (list (list fx (list x))))
-    ((equal? (car (car lst)) fx) (cons (list (car (car lst)) (append (cadr (car lst)) (list x))) (cdr lst)))
+    ((equal? (caar lst) fx) (cons (list (caar lst) (append (cadar lst) (list x))) (cdr lst)))
     (else (cons (car lst) (add-group f (cdr lst) x)))))
 
 ;(add-group even? '() 1)
