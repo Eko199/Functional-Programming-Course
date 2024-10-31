@@ -1,0 +1,10 @@
+#lang racket
+; Problem 1
+(define (union x lst)
+  (cond
+    ((null? lst) (list x))
+    ((equal? x (car lst)) lst)
+    (else (cons (car lst) (union x (cdr lst))))))
+
+(define (uniques lst)
+  (foldr union '() lst))
