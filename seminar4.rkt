@@ -99,12 +99,6 @@
 (f 5) ; -> 169
 
 ; Problem 7
-;(define (zipWith f lst1 lst2)
-;  (if (or (null? lst1) (null? lst2)) '()
-;      (cons (f (car lst1) (car lst2)) (zipWith f (cdr lst1) (cdr lst2)))))
-
-;(define (foldl-first f lst)
-  ;(if (null? lst) lst (foldl f (car lst) (cdr lst))))
 (define (any? p? lst)
   (if (null? lst) #f
       (or (p? (car lst)) (any? p? (cdr lst)))))
