@@ -79,6 +79,7 @@
 (tree->list test-tree)
 
 ; Problem 8
+
 (define (bst-insert val t)
   (cond
     ((empty-tree? t) (make-tree val empty-tree empty-tree))
@@ -88,3 +89,86 @@
 (tree->list (bst-insert 4 (bst-insert 3 (bst-insert 2 (bst-insert 2 (bst-insert 1 empty-tree))))))
 
 ; Problem 9
+
+(define (list-to-bst lst)
+  (if (null? lst)
+      empty-tree
+      (bst-insert (car lst) (list-to-bst (cdr lst)))))
+
+(define (three-sort lst)
+  (tree->list (list-to-bst lst)))
+
+(three-sort '(6 3 22 9 9 0 3 21))
+
+; Problem 10
+
+(define (tree-apply f t)
+  (apply f (tree->list t)))
+
+(define (valid-bst? t)
+  (or (empty-tree? t)
+      (and (valid-bst? (left-tree t))
+           (valid-bst? (right-tree t))
+           (or (empty-tree? (left-tree t)) (<= (tree-apply max (left-tree t)) (root-tree t)))
+           (or (empty-tree? (right-tree t)) (<= (root-tree t) (tree-apply min (right-tree t)))))))
+
+(valid-bst? (make-tree 1
+                       empty-tree
+                       (make-leaf 3)))
+
+(valid-bst? (make-tree 2
+                       (make-tree 1
+                                  empty-tree
+                                  (make-leaf 3))
+                       empty-tree))
+
+; Problem 11
+(define (empty-or-leaf? t)
+  (or (empty-tree? t) (and (empty-tree? (left-tree t)) (empty-tree? (right-tree t)))))
+
+(define (prune t)
+  (if (empty-or-leaf? t)
+      '()
+      (make-tree (root-tree t) (prune (left-tree t)) (prune (right-tree t)))))
+
+(prune test-tree)
+
+; Problem 12
+
+(define (bloom t)
+  (cond
+    ((empty-tree? t) t)
+    ((empty-or-leaf? t) (make-tree (root-tree t) (make-leaf (root-tree t)) (make-leaf (root-tree t))))
+    (else (make-tree (root-tree t) (bloom (left-tree t)) (bloom (right-tree t))))))
+
+(bloom test-tree)
+
+; Problem 13
+(define (avg t)
+  (if (empty-or-leaf? t)
+      t
+      (make-tree (/ (+ (tree-apply max t) (tree-apply min t)) 2)
+                 (avg (left-tree t))
+                 (avg (right-tree t)))))
+
+(avg test-tree)
+
+; Problem 14
+(define (rev-to-decimal bin)
+  (if (null? bin)
+      0
+      (+ (car bin) (* 2 (rev-to-decimal (cdr bin))))))
+
+(define (same-as-code t)
+  (define (loop sub-t code)
+    (if (empty-tree? sub-t)
+        '()
+        (append
+         (if (= (root-tree sub-t) (rev-to-decimal code))
+             (list (root-tree sub-t))
+             '())
+         (loop (left-tree sub-t) (cons 0 code))
+         (loop (right-tree sub-t) (cons 1 code)))))
+  (loop t '(1)))
+
+(same-as-code test-tree) ; -> '(3)
