@@ -1,0 +1,14 @@
+#lang racket
+(define (tree? t)
+  (or (null? t)
+      (and (list? t)
+           (= (length t) 3))
+           (tree? (cadr t))
+           (tree? (caddr t))))
+(define empty-tree '())
+(define (make-tree root left right) (list root left right))      ; не искаме просто (define make-tree list) - защо?
+(define (make-leaf root) (make-tree root empty-tree empty-tree)) ; за удобство
+(define root-tree car)
+(define left-tree cadr)
+(define right-tree caddr)
+(define empty-tree? null?)
