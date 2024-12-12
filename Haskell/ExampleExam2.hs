@@ -17,18 +17,12 @@ module ExampleExam2 where
 -- False
 -- True
 
-    notContains :: Eq a => [a] -> a -> Bool
-    notContains l el = null [x | x <- l, x == el]
-
-    contains :: Eq a => [a] -> a -> Bool
-    contains l = not . notContains l
-
     --maxCycle :: Int -> (Int -> Int) -> [Int]
     maxCycle n f = fst $ withMaxLen [cycle [] x 0 | x <- [0..n-1]]
         where
             cycle :: [Int] -> Int -> Int -> ([Int], Int)
             cycle lst last len =
-                if notContains lst last
+                if last `notElem` lst
                     then cycle (lst ++ [last]) (f last) (len + 1)
                     else (lst, len)
             withMaxLen :: [([Int], Int)] -> ([Int], Int)
@@ -67,7 +61,7 @@ module ExampleExam2 where
 
     --Problem 3
     allObjects :: [(String, [String])] -> [String]
-    allObjects l = [x | x <- concatMap snd l, notContains (map fst l) x]
+    allObjects l = [x | x <- concatMap snd l, x `notElem` map fst l]
 
     inv = [ ("docs", ["ids", "invoices"]), ("ids", ["passport"]),  ("invoices", []), ("memes", []),
         ("family", ["new year", "birthday"]), ("funny", ["memes"]), ("pics", ["family", "funny"]) ]
@@ -86,9 +80,9 @@ module ExampleExam2 where
             toClean = [x | (x, []) <- l] ++ [item | (_, [item]) <- l, (y, _) <- l, y == item]
             cleaned [] = []
             cleaned ((label, items): xs) =
-                if contains toClean label
+                if label `elem` toClean
                     then rest
-                    else (label, filter (notContains toClean) items ++ concat [content x l | x <- items, contains toClean x, not $ null $ content x l]) : rest
+                    else (label, filter (`notElem` toClean) items ++ concat [content x l | x <- items, x `elem` toClean, not $ null $ content x l]) : rest
                 where rest = cleaned xs
 
 -- >>> cleanUp inv
