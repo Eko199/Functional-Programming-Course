@@ -37,7 +37,7 @@ module Seminar9 where
     --Problem 2
     data BinaryTree a = Null | BinaryTree a (BinaryTree a) (BinaryTree a) deriving Show
 
-    maxSumPath :: Num a => BinaryTree a -> Int
+    maxSumPath :: BinaryTree Int -> Int
     maxSumPath Null = 0
     maxSumPath (BinaryTree v left right) = v + max (maxSumPath left) (maxSumPath right)
 
