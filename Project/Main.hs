@@ -73,11 +73,11 @@ module Pain where
             getNewTypeNameHelper _ = error "No more free type names!"
 
     unifyType :: MyType -> Substitutions -> MyType
-    unifyType x@(Atom t) s =
-        case s x of
-            Just t -> unifyType t s
+    unifyType x@(Atom t) subs =
+        case subs x of
+            Just t -> unifyType t subs
             Nothing -> x
-    unifyType (Func x y) s = Func (unifyType x s) (unifyType y s)
+    unifyType (Func x y) subs = Func (unifyType x subs) (unifyType y subs)
 
     typeFind :: Term -> UsedTypes -> Context -> Substitutions -> (MyType, UsedTypes, Context, Substitutions)
 
@@ -92,36 +92,39 @@ module Pain where
     typeFind term@(SingleTerm _) ut ctx s =
         case ctx term of
             (Just t) -> (t, ut, ctx, s)
-            Nothing -> error ("No assuptions for type of variable " ++ show term)
+            Nothing -> error ("No assuptions for type of variable " ++ show term ++ "!")
 
     typeFind term@(Application x y) ut ctx subs =
         case xType of
-            Atom t ->
-                let (res, ut1) = getNewTypeName ut
-                    xFuncType = Func yType (Atom res)
-                    newSubs :: Substitutions
-                    newSubs v =
-                        if v == xType
-                            then Just xFuncType
-                            else subs v
-                in (resultType xFuncType, ut1, ctx, newSubs)
+            Atom t -> 
+                if yType == xType 
+                    then error "The term has no type!" 
+                    else
+                        let (res, ut3) = getNewTypeName ut2
+                            xFuncType = Func yType (Atom res)
+                            newSubs :: Substitutions
+                            newSubs v =
+                                if v == xType
+                                    then Just xFuncType
+                                    else subs2 v
+                        in (resultType xFuncType, ut3, ctx, newSubs)
             Func p r ->
                 let newSubs :: Substitutions
                     newSubs v =
                         if v == p
                             then Just yType
-                            else subs v
-                in (r, ut, ctx, newSubs)
+                            else subs2 v
+                in (r, ut2, ctx, if p == yType then subs else newSubs)
         where
-            (yType, _, _, _) = typeFind y ut ctx subs
-            (xType, _, _, _) = typeFind x ut ctx subs
+            (yType, ut1, _, subs1) = typeFind y ut ctx subs
+            (xType, ut2, _, subs2) = typeFind x ut1 ctx subs1
 
     typeFind term@(Lambda x y) ut ctx subs = (Func (unifyType xType newSubs) (unifyType yType newSubs), ut2, ctx, newSubs)
         where
             (xTypeName, ut1) = getNewTypeName ut
             xType = Atom xTypeName
             newCtx :: Context
-            newCtx (SingleTerm x) = Just xType
+            newCtx tt@(SingleTerm t) = if t == x then Just xType else ctx tt
             newCtx t = ctx t
             (yType, ut2, _, newSubs) = typeFind y ut1 newCtx subs
 
@@ -134,12 +137,16 @@ module Pain where
             subs _ = Nothing
             (typeResult, _, _, _) = typeFind term "" ctx subs
 
-    --------------------TESTS-------------------------
-    testTerm = SingleTerm 'x'
-    --(testType, a, b) = typeFind testTerm "" defaultContext
+-------------------------TESTS-----------------------------
+-- >>> lambdaTermTypeInherence (strToTerm "\\x.x")
+-- a->a
 
 -- >>> lambdaTermTypeInherence (strToTerm "\\x.xx")
--- ProgressCancelledException
+-- The term has no type!
+
+-- a -> (a -> b -> c) -> b -> c
+-- >>> lambdaTermTypeInherence (strToTerm "\\y.\\x.\\z.xyz")
+-- a->(a->c->e)->c->e
 
 --TODO:
 --support for simpler lambdas (\xy.x)
