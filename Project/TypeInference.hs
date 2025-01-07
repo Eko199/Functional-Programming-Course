@@ -119,7 +119,7 @@ module TypeInference where
             (yType, ut1, _, subs1) = typeFind y ut ctx subs
             (xType, ut2, _, subs2) = typeFind x ut1 ctx subs1
 
-    typeFind term@(Lambda x y) ut ctx subs = (Func (unifyType xType newSubs) (unifyType yType newSubs), ut2, ctx, newSubs)
+    typeFind term@(Lambda x y) ut ctx subs = (Func xType yType, ut2, ctx, newSubs)
         where
             (xTypeName, ut1) = getNewTypeName ut
             xType = Atom xTypeName
@@ -128,14 +128,9 @@ module TypeInference where
             newCtx t = ctx t
             (yType, ut2, _, newSubs) = typeFind y ut1 newCtx subs
 
-    lambdaTermTypeInference :: Term -> MyType
-    lambdaTermTypeInference term@(Lambda _ _) = typeResult
-        where
-            ctx :: Context
-            ctx _ = Nothing
-            subs :: Substitutions
-            subs _ = Nothing
-            (typeResult, _, _, _) = typeFind term [] ctx subs
+    termTypeInference :: Term -> MyType
+    termTypeInference term = unifyType typeResult subs
+        where (typeResult, _, _, subs) = typeFind term [] (const Nothing) (const Nothing)
 
     -- Използван модел: OpenAI, GPT-4o
     -- Запитване:
@@ -154,7 +149,7 @@ module TypeInference where
     runApp = do
         putStr "Enter lambda term: "
         hFlush stdout
-        lambdaTermTypeInference . strToTerm <$> getLine
+        termTypeInference . strToTerm <$> getLine
 
     main :: IO ()
     main = do
@@ -171,3 +166,5 @@ module TypeInference where
 
 --TODO:
 --support for simpler lambdas (\xy.x)
+--support for fancy symbols
+--support for terms with free variables
