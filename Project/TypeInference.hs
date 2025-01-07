@@ -2,10 +2,10 @@ module TypeInference where
     import System.IO (hFlush, stdout)
 
     data Term = SingleTerm Char | Application Term Term | Lambda Char Term
-    data MyType = Atom Char | Func MyType MyType
+    data MyType = Atom String | Func MyType MyType
     type Substitutions = MyType -> Maybe MyType
     type Context = Term -> Maybe MyType
-    type UsedTypes = String
+    type UsedTypes = [String]
 
     instance Eq MyType where
         (==) :: MyType -> MyType -> Bool
@@ -15,7 +15,7 @@ module TypeInference where
 
     instance Show MyType where
         show :: MyType -> String
-        show (Atom x) = [x]
+        show (Atom x) = x
         show (Func x@(Atom _) y) = show x ++ "->" ++ show y
         show (Func x@(Func _ _) y) = "(" ++ show x ++ ")" ++ "->" ++ show y
 
@@ -67,18 +67,18 @@ module TypeInference where
     strToTerm ('\\':x:'.':xs) = Lambda x (strToTerm xs)
     strToTerm str = foldl1 Application $ map strToTerm $ separateBrackets str
 
-    typeNames :: String
-    typeNames = "abcdefghijklmnopqrtuvwxyz"
+    typeNames :: [String]
+    typeNames = separateBrackets "abcdefghijklmnopqrtuvwxyz"
 
-    getNewTypeName :: UsedTypes -> (Char, UsedTypes)
-    getNewTypeName ut = getNewTypeNameHelper typeNames
+    getNewTypeName :: UsedTypes -> (String, UsedTypes)
+    getNewTypeName ut = getNewTypeNameHelper typeNames 1
         where
-            getNewTypeNameHelper :: String -> (Char, UsedTypes)
-            getNewTypeNameHelper (x:xs) =
+            getNewTypeNameHelper :: [String] -> Int -> (String, UsedTypes)
+            getNewTypeNameHelper (x:xs) n =
                 if x `elem` ut
-                    then getNewTypeNameHelper xs
+                    then getNewTypeNameHelper xs n
                     else (x, x:ut)
-            getNewTypeNameHelper _ = error "No more free type names!"
+            getNewTypeNameHelper _ n = getNewTypeNameHelper (map (++ show n) typeNames) (n + 1)
 
     unifyType :: MyType -> Substitutions -> MyType
     unifyType x@(Atom t) subs =
@@ -135,7 +135,7 @@ module TypeInference where
             ctx _ = Nothing
             subs :: Substitutions
             subs _ = Nothing
-            (typeResult, _, _, _) = typeFind term "" ctx subs
+            (typeResult, _, _, _) = typeFind term [] ctx subs
 
     -- Използван модел: OpenAI, GPT-4o
     -- Запитване:
@@ -170,6 +170,4 @@ module TypeInference where
 -- a->(a->c->e)->c->e
 
 --TODO:
---console support
 --support for simpler lambdas (\xy.x)
---countably infinite type names
