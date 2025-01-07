@@ -1,4 +1,6 @@
-module Pain where
+module TypeInference where
+    import System.IO (hFlush, stdout)
+
     data Term = SingleTerm Char | Application Term Term | Lambda Char Term
     data MyType = Atom Char | Func MyType MyType
     type Substitutions = MyType -> Maybe MyType
@@ -20,6 +22,8 @@ module Pain where
     instance Show Term where
         show :: Term -> String
         show (SingleTerm x) = [x]
+        show (Application x@(Lambda _ _) y@(SingleTerm _)) = "(" ++ show x ++ ")" ++ show y
+        show (Application x@(Lambda _ _) y) = "(" ++ show x ++ ")" ++ "(" ++ show y ++ ")"
         show (Application x y@(SingleTerm _)) = show x ++ show y
         show (Application x y) = show x ++ "(" ++ show y ++ ")"
         show (Lambda x y) = "\\" ++ [x] ++ "." ++ show y
@@ -45,13 +49,17 @@ module Pain where
 
             splitClosedBracket :: String -> (String, String)
             splitClosedBracket "" = error "Invalid syntax!"
+            splitClosedBracket ('(':ys) = ('(':beforeStr ++ ")" ++ innerStr, restStr)
+                where
+                    (beforeStr, afterStr) = splitClosedBracket ys
+                    (innerStr, restStr) = splitClosedBracket afterStr
             splitClosedBracket (')':ys) = ("", ys)
             splitClosedBracket (y:ys) = (y:beforeStr, afterStr)
                 where (beforeStr, afterStr) = splitClosedBracket ys
             (inner, rest) = splitClosedBracket after
 
--- >>>separateBrackets "xy(asdf)as(a)"
--- ["x","y","asdf","a","s","a"]
+-- >>>separateBrackets "((\\y.y)(\\z.z))"
+-- ["(\\y.y)(\\z.z)"]
 
     strToTerm :: String -> Term
     strToTerm "" = error "Invalid term syntax!"
@@ -81,14 +89,6 @@ module Pain where
 
     typeFind :: Term -> UsedTypes -> Context -> Substitutions -> (MyType, UsedTypes, Context, Substitutions)
 
-    -- If we can make new assumptions:
-    -- typeFind term@(SingleTerm x) ut ctx s = 
-    --     case ctx term of
-    --         (Just t) -> (t, ut, ctx, s)
-    --         Nothing -> 
-    --             let (t, newUt) = getNewTypeName ut 
-    --             in (unifyType (Atom t) s, newUt, ctx, s)
-
     typeFind term@(SingleTerm _) ut ctx s =
         case ctx term of
             (Just t) -> (t, ut, ctx, s)
@@ -96,9 +96,9 @@ module Pain where
 
     typeFind term@(Application x y) ut ctx subs =
         case xType of
-            Atom t -> 
-                if yType == xType 
-                    then error "The term has no type!" 
+            Atom t ->
+                if yType == xType
+                    then error "The term has no type!"
                     else
                         let (res, ut3) = getNewTypeName ut2
                             xFuncType = Func yType (Atom res)
@@ -128,8 +128,8 @@ module Pain where
             newCtx t = ctx t
             (yType, ut2, _, newSubs) = typeFind y ut1 newCtx subs
 
-    lambdaTermTypeInherence :: Term -> MyType
-    lambdaTermTypeInherence term@(Lambda _ _) = typeResult
+    lambdaTermTypeInference :: Term -> MyType
+    lambdaTermTypeInference term@(Lambda _ _) = typeResult
         where
             ctx :: Context
             ctx _ = Nothing
@@ -137,18 +137,39 @@ module Pain where
             subs _ = Nothing
             (typeResult, _, _, _) = typeFind term "" ctx subs
 
--------------------------TESTS-----------------------------
--- >>> lambdaTermTypeInherence (strToTerm "\\x.x")
--- a->a
+    -- Използван модел: OpenAI, GPT-4o
+    -- Запитване:
+    -- > My putStr doesn't appear until after the getline is done
+    -- Оригинален отговор:
+    -- > import System.IO (hFlush, stdout)
+    -- > main :: IO ()
+    -- > main = do
+    -- >     putStr "Enter your name: "
+    -- >     hFlush stdout  -- Ensures "Enter your name: " is displayed immediately
+    -- >     name <- getLine
+    -- >     putStrLn ("Hello, " ++ name ++ "!")
+    -- Направени промени:
+    -- Използвани ред 1 и 5
+    runApp :: IO MyType
+    runApp = do
+        putStr "Enter lambda term: "
+        hFlush stdout
+        lambdaTermTypeInference . strToTerm <$> getLine
 
--- >>> lambdaTermTypeInherence (strToTerm "\\x.xx")
+    main :: IO ()
+    main = do
+        result <- runApp
+        print result
+
+
+-------------------------TESTS-----------------------------
+-- >>> lambdaTermTypeInference (strToTerm "\\x.xx")
 -- The term has no type!
 
--- a -> (a -> b -> c) -> b -> c
--- >>> lambdaTermTypeInherence (strToTerm "\\y.\\x.\\z.xyz")
+-- >>> lambdaTermTypeInference (strToTerm "\\y.\\x.\\z.xyz")
 -- a->(a->c->e)->c->e
 
 --TODO:
+--console support
 --support for simpler lambdas (\xy.x)
---typeFind for lambdas
 --countably infinite type names
