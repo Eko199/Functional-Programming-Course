@@ -1,17 +1,11 @@
 module TypeInference where
     import System.IO (hFlush, stdout)
 
-    data Term = SingleTerm Char | Application Term Term | Lambda Char Term
-    data MyType = Atom String | Func MyType MyType
+    data Term = SingleTerm Char | Application Term Term | Lambda Char Term deriving Eq
+    data MyType = Atom String | Func { parameter::MyType,  result::MyType } deriving Eq
     type Substitutions = MyType -> Maybe MyType
     type Context = Term -> Maybe MyType
     type UsedTypes = [String]
-
-    instance Eq MyType where
-        (==) :: MyType -> MyType -> Bool
-        Atom x == Atom y = x == y
-        Func t v == Func u s = t == u && v == s
-        _ == _ = False
 
     instance Show MyType where
         show :: MyType -> String
@@ -27,12 +21,6 @@ module TypeInference where
         show (Application x y@(SingleTerm _)) = show x ++ show y
         show (Application x y) = show x ++ "(" ++ show y ++ ")"
         show (Lambda x y) = "\\" ++ [x] ++ "." ++ show y
-
-    parameterType :: MyType -> MyType
-    parameterType (Func x _) = x
-
-    resultType :: MyType -> MyType
-    resultType (Func _ y) = y
 
     separateBrackets :: String -> [String]
     separateBrackets str
@@ -87,11 +75,14 @@ module TypeInference where
             Nothing -> x
     unifyType (Func x y) subs = Func (unifyType x subs) (unifyType y subs)
 
-    typeFind :: Term -> UsedTypes -> Context -> Substitutions -> (MyType, UsedTypes, Context, Substitutions)
+    addToFunction :: Eq a => (a -> Maybe b) -> a -> b -> a -> Maybe b
+    addToFunction f param res x = if x == param then Just res else f x
+
+    typeFind :: Term -> UsedTypes -> Context -> Substitutions -> (MyType, UsedTypes, Substitutions)
 
     typeFind term@(SingleTerm _) ut ctx s =
         case ctx term of
-            (Just t) -> (t, ut, ctx, s)
+            (Just t) -> (t, ut, s)
             Nothing -> error ("No assuptions for type of variable " ++ show term ++ "!")
 
     typeFind term@(Application x y) ut ctx subs =
@@ -102,35 +93,21 @@ module TypeInference where
                     else
                         let (res, ut3) = getNewTypeName ut2
                             xFuncType = Func yType (Atom res)
-                            newSubs :: Substitutions
-                            newSubs v =
-                                if v == xType
-                                    then Just xFuncType
-                                    else subs2 v
-                        in (resultType xFuncType, ut3, ctx, newSubs)
-            Func p r ->
-                let newSubs :: Substitutions
-                    newSubs v =
-                        if v == p
-                            then Just yType
-                            else subs2 v
-                in (r, ut2, ctx, if p == yType then subs else newSubs)
+                        in (result xFuncType, ut3, addToFunction subs2 xType xFuncType)
+            Func p r -> (r, ut2, if p == yType then subs else addToFunction subs2 p yType)
         where
-            (yType, ut1, _, subs1) = typeFind y ut ctx subs
-            (xType, ut2, _, subs2) = typeFind x ut1 ctx subs1
+            (yType, ut1, subs1) = typeFind y ut ctx subs
+            (xType, ut2, subs2) = typeFind x ut1 ctx subs1
 
-    typeFind term@(Lambda x y) ut ctx subs = (Func xType yType, ut2, ctx, newSubs)
+    typeFind term@(Lambda x y) ut ctx subs = (Func xType yType, ut2, newSubs)
         where
             (xTypeName, ut1) = getNewTypeName ut
             xType = Atom xTypeName
-            newCtx :: Context
-            newCtx tt@(SingleTerm t) = if t == x then Just xType else ctx tt
-            newCtx t = ctx t
-            (yType, ut2, _, newSubs) = typeFind y ut1 newCtx subs
+            (yType, ut2, newSubs) = typeFind y ut1 (addToFunction ctx (SingleTerm x) xType) subs
 
     termTypeInference :: Term -> MyType
     termTypeInference term = unifyType typeResult subs
-        where (typeResult, _, _, subs) = typeFind term [] (const Nothing) (const Nothing)
+        where (typeResult, _, subs) = typeFind term [] (const Nothing) (const Nothing)
 
     -- Използван модел: OpenAI, GPT-4o
     -- Запитване:
@@ -147,22 +124,14 @@ module TypeInference where
     -- Използвани ред 1 и 5
     runApp :: IO MyType
     runApp = do
-        putStr "Enter lambda term: "
+        putStr "Enter a lambda term: "
         hFlush stdout
         termTypeInference . strToTerm <$> getLine
 
     main :: IO ()
     main = do
         result <- runApp
-        print result
-
-
--------------------------TESTS-----------------------------
--- >>> lambdaTermTypeInference (strToTerm "\\x.xx")
--- The term has no type!
-
--- >>> lambdaTermTypeInference (strToTerm "\\y.\\x.\\z.xyz")
--- a->(a->c->e)->c->e
+        putStr ("The type of the term is: " ++ show result)
 
 --TODO:
 --support for simpler lambdas (\xy.x)
