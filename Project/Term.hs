@@ -28,10 +28,14 @@ module Term where
 -- >>>separateBrackets "((\\y.y)(\\z.z))"
 -- ["(\\y.y)(\\z.z)"]
 
+    isReservedSymbol :: Char -> Bool
+    isReservedSymbol = (`elem` "().\\")
+
     strToTerm :: String -> Term
     strToTerm "" = error "Invalid term syntax!"
     strToTerm [x] = SingleTerm x
-    strToTerm ('\\':x:'.':xs) = Lambda x (strToTerm xs)
+    strToTerm ('\\':x:'.':xs) = if isReservedSymbol x then error ("Invalid variable name " ++ [x]) else Lambda x (strToTerm xs)
+    strToTerm ('\\':x:xs) =  if isReservedSymbol x then error ("Invalid variable name " ++ [x]) else Lambda x (strToTerm ('\\':xs))
     strToTerm str = foldl1 Application $ map strToTerm $ separateBrackets str
 
     instance Read Term where
@@ -46,6 +50,3 @@ module Term where
         show (Application x y@(SingleTerm _)) = show x ++ show y
         show (Application x y) = show x ++ "(" ++ show y ++ ")"
         show (Lambda x y) = "\\" ++ [x] ++ "." ++ show y
-
--- >>> read "\\x.x" :: Term
--- \x.x

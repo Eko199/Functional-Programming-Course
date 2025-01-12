@@ -22,7 +22,7 @@ module Main where
         putStr "Enter a lambda term: "
         hFlush stdout
         line <- getLine
-        return (termTypeInference (read line :: Term))
+        return $ termTypeInference (read line :: Term)
 
     main :: IO ()
     main = do

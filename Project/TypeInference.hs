@@ -37,6 +37,5 @@ module TypeInference where
         where (typeResult, _, subs) = typeFind term [] (const Nothing) (const Nothing)
 
 --TODO:
---support for simpler lambdas (\xy.x)
 --support for fancy symbols
 --support for terms with free variables
