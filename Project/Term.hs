@@ -1,14 +1,5 @@
 module Term where
     data Term = SingleTerm Char | Application Term Term | Lambda Char Term deriving Eq
-
-    instance Show Term where
-        show :: Term -> String
-        show (SingleTerm x) = [x]
-        show (Application x@(Lambda _ _) y@(SingleTerm _)) = "(" ++ show x ++ ")" ++ show y
-        show (Application x@(Lambda _ _) y) = "(" ++ show x ++ ")" ++ "(" ++ show y ++ ")"
-        show (Application x y@(SingleTerm _)) = show x ++ show y
-        show (Application x y) = show x ++ "(" ++ show y ++ ")"
-        show (Lambda x y) = "\\" ++ [x] ++ "." ++ show y
         
     separateBrackets :: String -> [String]
     separateBrackets str
@@ -42,3 +33,19 @@ module Term where
     strToTerm [x] = SingleTerm x
     strToTerm ('\\':x:'.':xs) = Lambda x (strToTerm xs)
     strToTerm str = foldl1 Application $ map strToTerm $ separateBrackets str
+
+    instance Read Term where
+        readsPrec :: Int -> ReadS Term
+        readsPrec _ str = [(strToTerm str, "")]
+
+    instance Show Term where
+        show :: Term -> String
+        show (SingleTerm x) = [x]
+        show (Application x@(Lambda _ _) y@(SingleTerm _)) = "(" ++ show x ++ ")" ++ show y
+        show (Application x@(Lambda _ _) y) = "(" ++ show x ++ ")" ++ "(" ++ show y ++ ")"
+        show (Application x y@(SingleTerm _)) = show x ++ show y
+        show (Application x y) = show x ++ "(" ++ show y ++ ")"
+        show (Lambda x y) = "\\" ++ [x] ++ "." ++ show y
+
+-- >>> read "\\x.x" :: Term
+-- \x.x

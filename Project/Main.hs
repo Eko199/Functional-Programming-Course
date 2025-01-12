@@ -21,7 +21,8 @@ module Main where
     runApp = do
         putStr "Enter a lambda term: "
         hFlush stdout
-        termTypeInference . strToTerm <$> getLine
+        line <- getLine
+        return (termTypeInference (read line :: Term))
 
     main :: IO ()
     main = do
