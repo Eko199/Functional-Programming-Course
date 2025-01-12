@@ -1,4 +1,5 @@
 module Main where
+    import Control.Monad ( when )
     import System.IO (hFlush, stdout)
     import MyType
     import Term
@@ -22,7 +23,11 @@ module Main where
         putStr "Enter a lambda term: "
         hFlush stdout
         line <- getLine
-        return $ termTypeInference (read line :: Term)
+        let term = read line :: Term
+        let (result, ca) = termTypeInference term
+        when (ca /= []) $ putStrLn $ foldl (++) "The term has closed the free variables " (map ((:" ") . fst) ca) -- from IDE suggestion
+            ++ "\nThe new term is " ++ show (foldr (Lambda . fst) term ca)
+        return result
 
     main :: IO ()
     main = do
