@@ -25,9 +25,6 @@ module Term where
                 where (beforeStr, afterStr) = splitClosedBracket ys
             (inner, rest) = splitClosedBracket after
 
--- >>>separateBrackets "((\\y.y)(\\z.z))"
--- ["(\\y.y)(\\z.z)"]
-
     isReservedSymbol :: Char -> Bool
     isReservedSymbol = (`elem` "().\\")
 
