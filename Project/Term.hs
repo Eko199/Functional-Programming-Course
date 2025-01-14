@@ -49,4 +49,5 @@ module Term where
         show (Application x@(Lambda _ _) y) = "(" ++ show x ++ ")" ++ "(" ++ show y ++ ")"
         show (Application x y@(SingleTerm _)) = show x ++ show y
         show (Application x y) = show x ++ "(" ++ show y ++ ")"
+        show (Lambda x y@(Lambda _ _)) = "\\" ++ [x] ++ tail (show y)
         show (Lambda x y) = "\\" ++ [x] ++ "." ++ show y

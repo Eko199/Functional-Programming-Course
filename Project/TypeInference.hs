@@ -36,9 +36,8 @@ module TypeInference where
             (yType, ut2, newSubs, ca) = typeFind y ut1 (addToFunction ctx (SingleTerm x) xType) subs
 
     termTypeInference :: Term -> (MyType, ClosingArguments)
-    termTypeInference term = (foldr (Func . unifyType subs . snd) typeResult ca, ca)
+    termTypeInference term = (unifyType subs $ foldr (Func . snd) typeResult ca, ca)
         where (typeResult, _, subs, ca) = typeFind term [] (const Nothing) (const Nothing)
 
 --TODO:
 --support for fancy symbols
---support for terms with free variables
