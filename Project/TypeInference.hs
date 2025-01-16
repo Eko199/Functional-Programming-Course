@@ -24,15 +24,22 @@ module TypeInference where
                             xFuncType = Func yType (Atom res)
                         in (result xFuncType, ut2 + 1, addToFunction subs2 (t, xFuncType), ca)
             Func param res ->
-                if intersectTypes unifiedYType param
-                    then error "The term has no type!"
-                    else
-                        let newSubsPairs = case param of
-                                Atom _ -> [(param, yType)]
+                if param == unifiedYType then (res, ut2, subs2, ca) else
+                -- if intersectTypes unifiedYType param
+                --     then error "The term has no type!"
+                --     else
+                        let newSubsPairs = filter (uncurry (/=)) $ case param of
+                                Atom _ ->if intersectTypes unifiedYType param
+                                    then error "The term has no type!"
+                                    else [(param, yType)]
                                 Func paramParam paramRes ->
                                     case unifiedYType of
-                                        Atom _ ->  [(unifiedYType, param)]
-                                        Func yParam yRes -> [(paramParam, yParam), (paramRes, yRes)]
+                                        Atom _ ->if intersectTypes unifiedYType param
+                                            then error "The term has no type!"
+                                            else [(unifiedYType, param)]
+                                        Func yParam yRes -> if paramParam == paramRes
+                                            then [(yParam, paramParam), (yRes, paramRes)]
+                                            else [(paramParam, yParam), (paramRes, yRes)]
                         in (res, ut2, foldl addToFunction subs2 newSubsPairs, ca)
         where
             (yType, ut1, subs1, ca1) = typeFind y ut ctx subs
@@ -48,3 +55,9 @@ module TypeInference where
     termTypeInference :: Term -> (MyType, ClosingArguments)
     termTypeInference term = (sortTypeNames $ unifyType subs $ foldr (Func . snd) typeResult ca, ca)
         where (typeResult, _, subs, ca) = typeFind term 0 (const Nothing) (const Nothing)
+
+-- >>> termTypeInference (read "\\x.(\\f.f(fx))(\\y.x)" :: Term)
+-- (a->a,[])
+
+-- >>> termTypeInference (read "\\x.(\\y.xy)x" :: Term)
+-- The term has no type!
