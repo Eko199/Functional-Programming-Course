@@ -25,13 +25,13 @@ show Func (Atom "a") (Atom "b")
 
 ### 2. TypeNaming
 
-Manages the generation of new type names to avoid conflicts. It can generate countably infinite type names (a, b, c, ..., a1, b1, ..., a2, ..., a199, ...)
+Manages the generation of new type names to avoid conflicts. Has an infinite list of type names (a, b, c, ..., a1, b1, ..., a2, ..., a199, ...), accessed by index.
 
 #### Example
 
 ```haskell
-getNewTypeName ["a", "b", "c"]
--- Result: ("d", ["d", "a", "b", "c"])
+getNewTypeName 128
+-- Result: "d5"
 ```
 
 ### 3. Term

@@ -1,15 +1,24 @@
 module TypeNaming where
-    type UsedTypes = [String]
+    import MyType
+    import TypeSubstitutions (addToFunction)
+    type UsedTypes = Int
 
     typeNames :: [String]
-    typeNames = map (:[]) "abcdefghijklmnopqrtuvwxyz"
+    typeNames = [c : x | x <- [] : map show [1..], c <- "abcdefghijklmnopqrtuvwxyz"]
 
-    getNewTypeName :: UsedTypes -> (String, UsedTypes)
-    getNewTypeName ut = getNewTypeNameHelper typeNames 1
+    getNewTypeName :: UsedTypes -> String
+    getNewTypeName = (typeNames !!)
+
+    sortTypeNames :: MyType -> MyType
+    sortTypeNames = (\(x, _, _) -> x) . sortTypeNamesHelper 0 (const Nothing)
         where
-            getNewTypeNameHelper :: [String] -> Int -> (String, UsedTypes)
-            getNewTypeNameHelper (x:xs) n =
-                if x `elem` ut
-                    then getNewTypeNameHelper xs n
-                    else (x, x:ut)
-            getNewTypeNameHelper _ n = getNewTypeNameHelper (map (++ show n) typeNames) (n + 1)
+            sortTypeNamesHelper :: UsedTypes -> (String -> Maybe String) -> MyType -> (MyType, UsedTypes, String -> Maybe String)
+            sortTypeNamesHelper ut mapping (Func x y) = (Func xType yType, ut2, mapping2)
+                where
+                    (xType, ut1, mapping1) = sortTypeNamesHelper ut mapping x
+                    (yType, ut2, mapping2) = sortTypeNamesHelper ut1 mapping1 y
+
+            sortTypeNamesHelper ut mapping (Atom x) = 
+                case mapping x of 
+                    Nothing -> let xTypeName = getNewTypeName ut in (Atom xTypeName, ut + 1, addToFunction mapping x xTypeName)
+                    Just t -> (Atom t, ut, mapping)
