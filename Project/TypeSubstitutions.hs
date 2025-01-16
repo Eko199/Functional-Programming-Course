@@ -10,5 +10,5 @@ module TypeSubstitutions where
             Nothing -> x
     unifyType subs (Func x y) = Func (unifyType subs x) (unifyType subs y)
 
-    addToFunction :: Eq a => (a -> Maybe b) -> a -> b -> a -> Maybe b
-    addToFunction f param res x = if x == param then Just res else f x
+    addToFunction :: Eq a => (a -> Maybe b) -> (a, b) -> a -> Maybe b
+    addToFunction f (param, res) x = if x == param then Just res else f x

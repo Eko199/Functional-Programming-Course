@@ -20,5 +20,5 @@ module TypeNaming where
 
             sortTypeNamesHelper ut mapping (Atom x) = 
                 case mapping x of 
-                    Nothing -> let xTypeName = getNewTypeName ut in (Atom xTypeName, ut + 1, addToFunction mapping x xTypeName)
+                    Nothing -> let xTypeName = getNewTypeName ut in (Atom xTypeName, ut + 1, addToFunction mapping (x, xTypeName))
                     Just t -> (Atom t, ut, mapping)
