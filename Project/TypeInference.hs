@@ -4,11 +4,11 @@ module TypeInference where
     import TypeNaming
     import TypeSubstitutions
 
-    type Context = Term -> Maybe MyType
+    type Context = Term -> Maybe MyType --the current assumptions of type bindings
     type ClosingArguments = [(Char, MyType)]
 
     typeFind :: Term -> UsedTypes -> Context -> Substitutions -> (MyType, UsedTypes, Substitutions, ClosingArguments)
-    typeFind term@(SingleTerm c) ut ctx subs =
+    typeFind term@(Variable c) ut ctx subs =
         case ctx term of
             (Just t) -> (t, ut, subs, [])
             --Nothing -> error ("No assuptions for type of variable " ++ show term ++ "!")
@@ -33,7 +33,7 @@ module TypeInference where
         where
             (xTypeName, ut1) = getNewTypeName ut
             xType = Atom xTypeName
-            (yType, ut2, newSubs, ca) = typeFind y ut1 (addToFunction ctx (SingleTerm x) xType) subs
+            (yType, ut2, newSubs, ca) = typeFind y ut1 (addToFunction ctx (Variable x) xType) subs
 
     termTypeInference :: Term -> (MyType, ClosingArguments)
     termTypeInference term = (unifyType subs $ foldr (Func . snd) typeResult ca, ca)

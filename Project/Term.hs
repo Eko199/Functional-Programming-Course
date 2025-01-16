@@ -1,5 +1,5 @@
 module Term where
-    data Term = SingleTerm Char | Application Term Term | Lambda Char Term deriving Eq
+    data Term = Variable Char | Application Term Term | Lambda Char Term deriving Eq
         
     separateBrackets :: String -> [String]
     separateBrackets str
@@ -30,7 +30,7 @@ module Term where
 
     strToTerm :: String -> Term
     strToTerm "" = error "Invalid term syntax!"
-    strToTerm [x] = SingleTerm x
+    strToTerm [x] = Variable x
     strToTerm ('\\':x:'.':xs) = if isReservedSymbol x then error ("Invalid variable name " ++ [x]) else Lambda x (strToTerm xs)
     strToTerm ('\\':x:xs) =  if isReservedSymbol x then error ("Invalid variable name " ++ [x]) else Lambda x (strToTerm ('\\':xs))
     strToTerm str = foldl1 Application $ map strToTerm $ separateBrackets str
@@ -41,10 +41,10 @@ module Term where
 
     instance Show Term where
         show :: Term -> String
-        show (SingleTerm x) = [x]
-        show (Application x@(Lambda _ _) y@(SingleTerm _)) = "(" ++ show x ++ ")" ++ show y
+        show (Variable x) = [x]
+        show (Application x@(Lambda _ _) y@(Variable _)) = "(" ++ show x ++ ")" ++ show y
         show (Application x@(Lambda _ _) y) = "(" ++ show x ++ ")" ++ "(" ++ show y ++ ")"
-        show (Application x y@(SingleTerm _)) = show x ++ show y
+        show (Application x y@(Variable _)) = show x ++ show y
         show (Application x y) = show x ++ "(" ++ show y ++ ")"
         show (Lambda x y@(Lambda _ _)) = "\\" ++ [x] ++ tail (show y)
         show (Lambda x y) = "\\" ++ [x] ++ "." ++ show y
