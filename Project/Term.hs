@@ -1,7 +1,8 @@
 module Term where
     data Term = Variable Char | Application Term Term | Lambda Char Term deriving Eq
-        
+
     separateBrackets :: String -> [String]
+    separateBrackets str@('\\':_) = [str]
     separateBrackets str
         | '(' `elem` str = before ++ [inner] ++ separateBrackets rest
         | ')' `elem` str = error "Invalid syntax!"

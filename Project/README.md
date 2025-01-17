@@ -55,7 +55,7 @@ show exampleTerm
 
 ### 3. TypeSubstitutions
 
-`Substitutions` is a short name for the type `MyType -> Maybe MyType`. It enables the definition of equivalence of two types, which is an occasion during the type inference process. The substitutions are applied recursively on the result type of the main algorithm. A return value of `Nothing` marks a type argument, for which no substitutions were created (it should remain the same).
+`Substitutions` is a short name for the type `MyType -> Maybe MyType`. It enables the definition of equivalence of two types, which is an occasion during the type inference process. The substitutions are applied recursively on the result type of the main algorithm and a check for recursive type definition is made. A return value of `Nothing` marks a type argument, for which no substitutions were created (it should remain the same).
 
 #### Example
 
@@ -79,19 +79,19 @@ type Context = Term -> Maybe MyType --the current assumptions for the type bindi
 type ClosingArguments = [(Char, MyType)] --needed for the automatic term closing: if there is no assumption for a variable, a new type is created for it and the binding is added to a list used in the end of the algorithm
 ```
 
-The `typeFind` function take as arguments a `Term`, a list of the currently used type names `UsedTypes` and the current `Context` and `Substitutions`. It returns a tuple of: 
+The `typeFind` function take as arguments a `Term`, the count of the currently used type names `UsedTypes` and the current `Context` and `Substitutions`. It returns a tuple of: 
 - `MyType` - the inferred type of the term (no substitutions applied yet)
-- `UsedTypes` - a new list of type names, in case a new type was created
+- `UsedTypes` - the count of the used type names, in case a new type was created, used for indexing next name
 - `Substitutions` - type inference of applications can add new type substitutions to the previously generated ones
 - `ClosingArguments` - if new variables need to be closed, they are added here
 
 \
 The type inference algorithm is as it follows:
 - If the term is a single variable, get its type from the current context. If no type is assumed, the variable is free and a new type is created and added to `ClosingArguments`
-- If the term is an application of two terms `x` and `y`, first find the types of `x` and `y` and check for new substitutions: x needs to be a function type that takes as an argument the type of `y`. Also checks for recursive type definitions and throws an error if one is found. The result is the return type of the function `x`.
+- If the term is an application of two terms `x` and `y`, first find the types of `x` and `y` and check for new substitutions: x needs to be a function type that takes as an argument the type of `y`. The result is the return type of the function `x`.
 - If the term is an abstraction of a term with a varible, then this variable is added to the `Context` with a newly assumed type `a`. Then the resulting type is a function from `a` to the inferred type of the inner term.
 
-Finally, the `termTypeInference` function takes a term and runs it trough `typeFind` and constructs a new type: a function taking as arguments the types of the closing variables and returns the result type. After that the constructed type is mapped through the `Substitutions` and returned with the `ClosingArguments` for output.
+Finally, the `termTypeInference` function takes a term and runs it trough `typeFind` and constructs a new type: a function taking as arguments the types of the closing variables and returns the result type. After that the constructed type is mapped through the `Substitutions`, which also check for recursive type definitions and throws an error if one is found. The result is returned with the `ClosingArguments` for output.
 
 ### Example: `λyx.xy`
 - Lambda term -> assume `y`:`a`

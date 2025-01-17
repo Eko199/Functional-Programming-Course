@@ -25,6 +25,7 @@ module Main where
         line <- getLine
         let term = read line :: Term
         let (result, ca) = termTypeInference term
+        when (any (isReservedSymbol . fst) ca) $ error "Invalid syntax!"
         when (ca /= []) $ putStrLn $ foldl (++) "The term has closed the free variable/s " (map ((:" ") . fst) ca) -- from IDE suggestion
             ++ "\nThe new term is " ++ show (foldr (Lambda . fst) term ca)
         return result

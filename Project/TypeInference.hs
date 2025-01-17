@@ -16,31 +16,23 @@ module TypeInference where
 
     typeFind term@(Application x y) ut ctx subs =
         case unifyType subs2 xType of
-            t@(Atom _) ->
-                if intersectTypes unifiedYType t
-                    then error "The term has no type!"
-                    else
-                        let res = getNewTypeName ut2
-                            xFuncType = Func yType (Atom res)
-                        in (result xFuncType, ut2 + 1, addToFunction subs2 (t, xFuncType), ca)
-            Func param res ->
-                if param == unifiedYType then (res, ut2, subs2, ca) else
-                -- if intersectTypes unifiedYType param
-                --     then error "The term has no type!"
-                --     else
-                        let newSubsPairs = filter (uncurry (/=)) $ case param of
-                                Atom _ ->if intersectTypes unifiedYType param
-                                    then error "The term has no type!"
-                                    else [(param, yType)]
-                                Func paramParam paramRes ->
-                                    case unifiedYType of
-                                        Atom _ ->if intersectTypes unifiedYType param
-                                            then error "The term has no type!"
-                                            else [(unifiedYType, param)]
-                                        Func yParam yRes -> if paramParam == paramRes
-                                            then [(yParam, paramParam), (yRes, paramRes)]
-                                            else [(paramParam, yParam), (paramRes, yRes)]
-                        in (res, ut2, foldl addToFunction subs2 newSubsPairs, ca)
+            t@(Atom _) -> let xFuncType = Func yType (Atom (getNewTypeName ut2))
+                          in (result xFuncType, ut2 + 1, addToFunction subs2 (t, xFuncType), ca)
+            Func param res -> 
+                (res, ut2, 
+                    if param == unifiedYType 
+                        then subs2 
+                        else let newSubsPairs = filter (uncurry (/=)) $ 
+                                    case param of
+                                        Atom _ -> [(param, yType)]
+                                        Func paramParam paramRes ->
+                                            case unifiedYType of
+                                                Atom _ -> [(unifiedYType, param)]
+                                                Func yParam yRes -> if paramParam == paramRes
+                                                    then [(yParam, paramParam), (yRes, paramRes)]
+                                                    else [(paramParam, yParam), (paramRes, yRes)]
+                             in foldl addToFunction subs2 newSubsPairs, 
+                ca)
         where
             (yType, ut1, subs1, ca1) = typeFind y ut ctx subs
             (xType, ut2, subs2, ca2) = typeFind x ut1 ctx subs1
@@ -60,4 +52,4 @@ module TypeInference where
 -- (a->a,[])
 
 -- >>> termTypeInference (read "\\x.(\\y.xy)x" :: Term)
--- The term has no type!
+-- Recursive type definition detected. The term has no type.

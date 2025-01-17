@@ -6,8 +6,3 @@ module MyType where
         show (Atom x) = x
         show (Func x@(Atom _) y) = show x ++ "->" ++ show y
         show (Func x@(Func _ _) y) = "(" ++ show x ++ ")" ++ "->" ++ show y
-
-    intersectTypes :: MyType -> MyType -> Bool
-    intersectTypes (Atom x) (Atom y) = x == y
-    intersectTypes x (Func y z) = intersectTypes x y || intersectTypes x z
-    intersectTypes (Func x y) z = intersectTypes x z || intersectTypes y z
