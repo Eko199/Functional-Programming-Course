@@ -1,9 +1,10 @@
 module TypeInference where
+    import Data.Bifunctor
     import MyType
     import Term
     import TypeNaming
     import TypeSubstitutions
-
+    
     type Context = Term -> Maybe MyType --the current assumptions of type bindings
     type ClosingArguments = [(Char, MyType)]
 
@@ -21,11 +22,11 @@ module TypeInference where
             Func param res -> (res, ut2, createSubs param (unifyType subs2 yType) subs2,ca)
         where
             (yType, ut1, subs1, ca1) = typeFind y ut ctx subs
-            (xType, ut2, subs2, ca2) = typeFind x ut1 ctx subs1
+            (xType, ut2, subs2, ca2) = typeFind x ut1 (foldl addToFunction ctx $ map (Data.Bifunctor.first Variable) ca1) subs1
             ca = ca2 ++ ca1
 
             createSubs :: MyType -> MyType -> Substitutions -> Substitutions
-            createSubs x@(Func xParam xRes) y@(Func yParam yRes) s = 
+            createSubs x@(Func xParam xRes) y@(Func yParam yRes) s =
                 if xParam == xRes
                     then createSubs yRes xRes (createSubs yParam xParam s)
                     else createSubs xRes yRes (createSubs xParam yParam s)
