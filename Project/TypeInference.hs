@@ -1,9 +1,10 @@
 module TypeInference where
+    import Data.Bifunctor
     import MyType
     import Term
     import TypeNaming
     import TypeSubstitutions
-
+    
     type Context = Term -> Maybe MyType --the current assumptions of type bindings
     type ClosingArguments = [(Char, MyType)]
 
@@ -18,26 +19,19 @@ module TypeInference where
         case unifyType subs2 xType of
             t@(Atom _) -> let xFuncType = Func yType (Atom (getNewTypeName ut2))
                           in (result xFuncType, ut2 + 1, addToFunction subs2 (t, xFuncType), ca)
-            Func param res -> 
-                (res, ut2, 
-                    if param == unifiedYType 
-                        then subs2 
-                        else let newSubsPairs = filter (uncurry (/=)) $ 
-                                    case param of
-                                        Atom _ -> [(param, yType)]
-                                        Func paramParam paramRes ->
-                                            case unifiedYType of
-                                                Atom _ -> [(unifiedYType, param)]
-                                                Func yParam yRes -> if paramParam == paramRes
-                                                    then [(yParam, paramParam), (yRes, paramRes)]
-                                                    else [(paramParam, yParam), (paramRes, yRes)]
-                             in foldl addToFunction subs2 newSubsPairs, 
-                ca)
+            Func param res -> (res, ut2, createSubs param (unifyType subs2 yType) subs2,ca)
         where
             (yType, ut1, subs1, ca1) = typeFind y ut ctx subs
-            (xType, ut2, subs2, ca2) = typeFind x ut1 ctx subs1
+            (xType, ut2, subs2, ca2) = typeFind x ut1 (foldl addToFunction ctx $ map (Data.Bifunctor.first Variable) ca1) subs1
             ca = ca2 ++ ca1
-            unifiedYType = unifyType subs2 yType
+
+            createSubs :: MyType -> MyType -> Substitutions -> Substitutions
+            createSubs x@(Func xParam xRes) y@(Func yParam yRes) s =
+                if xParam == xRes
+                    then createSubs yRes xRes (createSubs yParam xParam s)
+                    else createSubs xRes yRes (createSubs xParam yParam s)
+            createSubs x@(Atom _) y s = if x == y then s else addToFunction s (x, y)
+            createSubs x@(Func _ _) y s = if x == y then s else addToFunction s (y, x)
 
     typeFind term@(Lambda x y) ut ctx subs = (Func xType yType, ut2, newSubs, ca)
         where

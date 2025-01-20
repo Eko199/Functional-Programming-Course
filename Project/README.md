@@ -26,6 +26,7 @@ show Func (Atom "a") (Atom "b")
 ### 2. TypeNaming
 
 Manages the generation of new type names to avoid conflicts. Has an infinite list of type names (a, b, c, ..., a1, b1, ..., a2, ..., a199, ...), accessed by index.
+Also provides a function mapping all used type names in alphabetical order.
 
 #### Example
 
@@ -108,6 +109,7 @@ Finally, the `termTypeInference` function takes a term and runs it trough `typeF
 - No closing arguments
 - Apply substitutions (`b` = `a->c`)
 - The result is `a->(a->c)->c`
+- Sort the type names: `a->(a->b)->b`
 
 #### Example call
 
