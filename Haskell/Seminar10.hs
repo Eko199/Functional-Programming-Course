@@ -69,3 +69,64 @@ module Seminar10 where
             where 
                 (Map leftTree) = fmap f (Map left)
                 (Map rightTree) = fmap f (Map right)
+
+    --Problem 7
+    data Direction = BSTLeft | BSTRight
+
+    bstPath :: Ord a => a -> BST a -> Maybe [Direction]
+    bstPath _ Empty = Nothing
+    bstPath x (BST root left right) 
+        | x == root = Just []
+        | x < root = 
+            case bstPath x left of
+                Nothing -> Nothing
+                Just path -> Just (BSTLeft : path)
+        | otherwise = 
+            case bstPath x right of
+                Nothing -> Nothing
+                Just path -> Just (BSTRight : path)
+
+    --Problem 8
+    data Expr = Var | Const Double | Add Expr Expr | Subtract Expr Expr | Multiply Expr Expr | Divide Expr Expr | Pow Expr Expr | Ln Expr deriving Show
+
+    eval :: Expr -> Double -> Double
+    eval Var d = d
+    eval (Const d) _ = d
+    eval (Add x y) d = eval x d + eval y d
+    eval (Subtract x y) d = eval x d - eval y d
+    eval (Multiply x y) d = eval x d * eval y d
+    eval (Divide x y) d = eval x d / eval y d
+    eval (Pow x y) d = eval x d ** eval y d
+    eval (Ln x) d = log (eval x d)
+
+    isFunction :: Expr -> Bool
+    isFunction Var = True
+    isFunction (Const _) = False
+    isFunction (Add x y) = isFunction x || isFunction y
+    isFunction (Subtract x y) = isFunction x || isFunction y
+    isFunction (Multiply x y) = isFunction x || isFunction y
+    isFunction (Divide x y) = isFunction x || isFunction y
+    isFunction (Pow x y) = isFunction x || isFunction y
+    isFunction (Ln x) = isFunction x
+
+    derive :: Expr -> Expr
+    derive Var = Const 1
+    derive (Const _) = Const 0
+    derive (Add x y) = Add (derive x) (derive y)
+    derive (Subtract x y) = Subtract (derive x) (derive y)
+    derive (Multiply x y) = Add (Multiply (derive x) y) (Multiply x (derive y))
+    derive (Divide x y) = Divide (Subtract (Multiply (derive x) y) (Multiply x (derive y))) (Pow y (Const 2))
+    derive e@(Pow x y) 
+        | xFunc && yFunc = derive (Pow (Const (exp 1)) (Multiply y (Ln x)))
+        | xFunc = if eval y 0 == 0 then Const 0 else Multiply y (Multiply (Pow x (Subtract y (Const 1))) (derive x))
+        | otherwise = let a = eval x 0 in
+            if a < 0 then error "Not supported" else
+                if a == 0 then Const 0 else
+                    Multiply e (Multiply (Ln (Const a)) (derive y))
+        where
+            xFunc = isFunction x
+            yFunc = isFunction y
+    derive (Ln x) = Divide (Const 1) Var
+
+-- >>> derive (Pow (Multiply Var Var) (Add (Const 2) (Const 1)))
+-- Multiply (Add (Const 2.0) (Const 1.0)) (Multiply (Pow (Multiply Var Var) (Subtract (Add (Const 2.0) (Const 1.0)) (Const 1.0))) (Add (Multiply (Const 1.0) Var) (Multiply Var (Const 1.0))))
