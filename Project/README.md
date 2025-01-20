@@ -109,7 +109,7 @@ Finally, the `termTypeInference` function takes a term and runs it trough `typeF
 - No closing arguments
 - Apply substitutions (`b` = `a->c`)
 - The result is `a->(a->c)->c`
-- Then the type names are sorted: `a->(a->b)->b`
+- Sort the type names: `a->(a->b)->b`
 
 #### Example call
 
