@@ -130,3 +130,46 @@ module Seminar10 where
 
 -- >>> derive (Pow (Multiply Var Var) (Add (Const 2) (Const 1)))
 -- Multiply (Add (Const 2.0) (Const 1.0)) (Multiply (Pow (Multiply Var Var) (Subtract (Add (Const 2.0) (Const 1.0)) (Const 1.0))) (Add (Multiply (Const 1.0) Var) (Multiply Var (Const 1.0))))
+
+    --Problem 9
+    treeAvg :: (Fractional a, Ord a) => BST a -> BST a
+    treeAvg Empty = Empty
+    treeAvg t = newTree
+        where
+            treeAvgHelper :: (Fractional a, Ord a) => BST a -> (BST a, a, a)
+            treeAvgHelper tree@(BST root Empty Empty) = (tree, root, root)
+            treeAvgHelper (BST root left Empty) = (BST ((min root minimal + max root maximal) / 2) newLeft Empty, min root minimal, max root maximal)
+                where (newLeft, minimal, maximal) = treeAvgHelper left
+            treeAvgHelper (BST root Empty right) = (BST ((min root minimal + max root maximal) / 2) Empty newRight, min root minimal, max root maximal)
+                where (newRight, minimal, maximal) = treeAvgHelper right
+            treeAvgHelper (BST root left right) = (BST ((minimal + maximal) / 2) newLeft newRight, minimal, maximal)
+                where
+                    (newLeft, leftMin, leftMax) = treeAvgHelper left
+                    (newRight, rightMin, rightMax) = treeAvgHelper right
+                    minimal = min root (min leftMin rightMin)
+                    maximal = max root (max leftMax rightMax)
+            (newTree, _, _) = treeAvgHelper t
+
+-- >>> treeAvg (BST 1 (BST 10 Empty (BST (-1) Empty (BST 1 Empty Empty))) (BST 1 (BST 1 Empty Empty) (BST 1 Empty Empty)))
+-- BST 4.5 (BST 4.5 Empty (BST 0.0 Empty (BST 1.0 Empty Empty))) (BST 1.0 (BST 1.0 Empty Empty) (BST 1.0 Empty Empty))
+
+-- >>> treeAvg (BST 1 (BST 10 Empty Empty) Empty)
+-- BST 5.5 (BST 10.0 Empty Empty) Empty
+
+    --Problem 10
+    binaryToDecimal :: [Int] -> Int
+    binaryToDecimal [] = 0
+    binaryToDecimal (x:xs) = x + 2 * binaryToDecimal xs
+
+    sameAsCode :: BST Int -> [Int]
+    sameAsCode = sameAsCodeHelper [1]
+        where
+            sameAsCodeHelper :: [Int] -> BST Int -> [Int]
+            sameAsCodeHelper _ Empty = []
+            sameAsCodeHelper history (BST root left right) = 
+                if root == binaryToDecimal history
+                    then root : rest
+                    else rest
+                where rest = sameAsCodeHelper (0:history) left ++ sameAsCodeHelper (1:history) right
+-- >>> sameAsCode (BST 1 (BST 2 Empty (BST (-1) Empty (BST 1 Empty Empty))) (BST 1 (BST 1 Empty Empty) (BST 7 Empty Empty)))
+-- [1,2,7]
